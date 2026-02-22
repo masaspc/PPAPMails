@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}管理ダッシュボード - TBN Secure Download{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-6">
+            <h1 class="text-lg font-bold text-blue-700">TBN Secure Download</h1>
+            <div class="flex gap-4 text-sm">
+                <a href="/admin/" class="text-blue-600 hover:text-blue-800 font-medium">ダッシュボード</a>
+                <a href="/admin/transfers" class="text-gray-600 hover:text-gray-800">送信履歴</a>
+                <a href="/admin/settings" class="text-gray-600 hover:text-gray-800">設定</a>
+                <a href="/admin/excluded-domains" class="text-gray-600 hover:text-gray-800">除外ドメイン</a>
+                <a href="/admin/audit-logs" class="text-gray-600 hover:text-gray-800">監査ログ</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600">{{ user.get('name', user.get('email', '')) }}</span>
+            <a href="/auth/logout" class="text-sm text-gray-500 hover:text-gray-700">ログアウト</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<h2 class="text-xl font-bold text-gray-800 mb-6">ダッシュボード</h2>
+
+<!-- 統計カード -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-sm text-gray-500">総送信数</p>
+        <p class="text-2xl font-bold text-gray-800">{{ stats.total_transfers }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-sm text-gray-500">有効な送信</p>
+        <p class="text-2xl font-bold text-green-600">{{ stats.active_transfers }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-sm text-gray-500">総ダウンロード</p>
+        <p class="text-2xl font-bold text-blue-600">{{ stats.total_downloads }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-sm text-gray-500">ストレージ使用量</p>
+        <p class="text-2xl font-bold text-gray-800">{{ stats.storage_used_mb }} MB</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-2 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-sm text-gray-500">本日の送信</p>
+        <p class="text-2xl font-bold text-gray-800">{{ stats.transfers_today }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-sm text-gray-500">本日のダウンロード</p>
+        <p class="text-2xl font-bold text-gray-800">{{ stats.downloads_today }}</p>
+    </div>
+</div>
+
+<!-- 送信履歴テーブル（transfersがある場合） -->
+{% if transfers is defined and transfers %}
+<h3 class="text-lg font-bold text-gray-800 mb-4">全社送信履歴</h3>
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">送信者</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">件名</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">送信日時</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状態</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for t in transfers %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm text-gray-900">{{ t.sender_email }}</td>
+                <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">{{ t.subject or '(件名なし)' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ t.sent_at.strftime('%Y/%m/%d %H:%M') }}</td>
+                <td class="px-4 py-3">
+                    {% if t.status == 'active' %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">有効</span>
+                    {% else %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">{{ t.status }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <a href="/admin/transfers/{{ t.id }}" class="text-blue-600 hover:text-blue-800 text-sm">詳細</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if total is defined %}
+<div class="mt-4 text-sm text-gray-500 text-center">
+    {{ total }}件中 {{ ((page - 1) * per_page) + 1 }}〜{{ [page * per_page, total]|min }}件表示
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

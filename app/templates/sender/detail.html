@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}送信詳細 - TBN Secure Download{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <h1 class="text-lg font-bold text-blue-700">TBN Secure Download</h1>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600">{{ user.get('name', user.get('email', '')) }}</span>
+            <a href="/auth/logout" class="text-sm text-gray-500 hover:text-gray-700">ログアウト</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-start">
+    <div>
+        <a href="/sender/" class="text-blue-600 hover:text-blue-800 text-sm">&larr; 送信履歴に戻る</a>
+        <h2 class="text-xl font-bold text-gray-800 mt-2">{{ transfer.subject or '(件名なし)' }}</h2>
+        <p class="text-sm text-gray-500">送信日時: {{ transfer.sent_at.strftime('%Y年%m月%d日 %H:%M') }}</p>
+    </div>
+    <div class="flex items-center gap-2">
+        {% if transfer.status == 'active' %}
+        <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">有効</span>
+        <button onclick="revokeTransfer()" id="revokeBtn"
+                class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+            無効化
+        </button>
+        {% elif transfer.status == 'revoked' %}
+        <span class="px-3 py-1 text-sm rounded-full bg-red-100 text-red-800">無効化済み</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 受信者一覧 -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h3 class="text-lg font-bold text-gray-800 mb-3">受信者</h3>
+    <div class="space-y-2">
+        {% for r in transfer.recipients %}
+        <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600 uppercase">{{ r.recipient_type }}</span>
+            <span class="text-sm text-gray-800">{{ r.email }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 添付ファイル・ダウンロード状況 -->
+<div class="bg-white rounded-lg shadow-md p-6">
+    <h3 class="text-lg font-bold text-gray-800 mb-3">添付ファイル</h3>
+    {% for att in transfer.attachments %}
+    <div class="border border-gray-200 rounded-lg p-4 mb-4 last:mb-0">
+        <div class="flex justify-between items-start mb-3">
+            <div>
+                <p class="font-medium text-gray-900">{{ att.original_filename }}</p>
+                <p class="text-sm text-gray-500">
+                    {% if att.file_size < 1024 %}
+                        {{ att.file_size }} B
+                    {% elif att.file_size < 1048576 %}
+                        {{ "%.1f"|format(att.file_size / 1024) }} KB
+                    {% else %}
+                        {{ "%.1f"|format(att.file_size / 1048576) }} MB
+                    {% endif %}
+                    &middot; {{ att.mime_type or '不明' }}
+                </p>
+            </div>
+            <span class="text-sm text-gray-600">
+                DL {{ att.download_count }}/{{ att.max_downloads }}
+            </span>
+        </div>
+        {% if att.download_logs %}
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-3 py-2 text-left text-xs text-gray-500">受信者</th>
+                    <th class="px-3 py-2 text-left text-xs text-gray-500">日時</th>
+                    <th class="px-3 py-2 text-left text-xs text-gray-500">IP</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for log in att.download_logs %}
+                <tr>
+                    <td class="px-3 py-2 text-gray-800">{{ log.recipient_email }}</td>
+                    <td class="px-3 py-2 text-gray-600">{{ log.downloaded_at.strftime('%Y/%m/%d %H:%M') }}</td>
+                    <td class="px-3 py-2 text-gray-600">{{ log.ip_address or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-sm text-gray-400">まだダウンロードされていません</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function revokeTransfer() {
+    if (!confirm('このダウンロードURLを無効化しますか？\nこの操作は取り消せません。')) return;
+    const btn = document.getElementById('revokeBtn');
+    btn.disabled = true;
+    try {
+        const resp = await fetch('/sender/transfer/{{ transfer.id }}/revoke', {method: 'POST'});
+        const data = await resp.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    } catch(e) {
+        alert('エラーが発生しました');
+    }
+    btn.disabled = false;
+}
+</script>
+{% endblock %}

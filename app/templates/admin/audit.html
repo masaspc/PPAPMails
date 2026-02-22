@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}監査ログ - TBN Secure Download{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-6">
+            <h1 class="text-lg font-bold text-blue-700">TBN Secure Download</h1>
+            <div class="flex gap-4 text-sm">
+                <a href="/admin/" class="text-gray-600 hover:text-gray-800">ダッシュボード</a>
+                <a href="/admin/transfers" class="text-gray-600 hover:text-gray-800">送信履歴</a>
+                <a href="/admin/settings" class="text-gray-600 hover:text-gray-800">設定</a>
+                <a href="/admin/excluded-domains" class="text-gray-600 hover:text-gray-800">除外ドメイン</a>
+                <a href="/admin/audit-logs" class="text-blue-600 hover:text-blue-800 font-medium">監査ログ</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600">{{ user.get('name', user.get('email', '')) }}</span>
+            <a href="/auth/logout" class="text-sm text-gray-500 hover:text-gray-700">ログアウト</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-bold text-gray-800">監査ログ</h2>
+    <a href="/admin/audit-logs/export"
+       class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+        CSV出力
+    </a>
+</div>
+
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    {% if logs %}
+    <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">日時</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">実行者</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">アクション</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">対象</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for log in logs %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm text-gray-600">{{ log.created_at.strftime('%Y/%m/%d %H:%M:%S') }}</td>
+                <td class="px-4 py-3 text-sm text-gray-900">{{ log.actor_email or '-' }}</td>
+                <td class="px-4 py-3 text-sm">
+                    <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">{{ log.action }}</span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ log.target_type or '' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ log.ip_address or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if total > per_page %}
+    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+        <span class="text-sm text-gray-500">{{ total }}件中 {{ ((page - 1) * per_page) + 1 }}〜{{ [page * per_page, total]|min }}件表示</span>
+        <div class="flex gap-2">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}" class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100">前へ</a>
+            {% endif %}
+            {% if page * per_page < total %}
+            <a href="?page={{ page + 1 }}" class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100">次へ</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="text-center py-8">
+        <p class="text-gray-500 text-sm">監査ログはありません</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

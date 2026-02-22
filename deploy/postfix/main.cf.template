@@ -1,0 +1,42 @@
+# TBN Secure Download - Postfix main.cf テンプレート
+# /etc/postfix/main.cf
+
+# 基本設定
+myhostname = mail.tbnet.jp
+mydomain = tbnet.jp
+myorigin = $mydomain
+mydestination =
+mynetworks = 127.0.0.0/8, ${PEER_VPS_IP}/32
+
+# Exchange Onlineからの受信設定
+inet_interfaces = all
+inet_protocols = ipv4
+
+# TLS設定 (Exchange Onlineからの受信にTLSを使用)
+smtpd_use_tls = yes
+smtpd_tls_cert_file = /etc/letsencrypt/live/download.tbnet.jp/fullchain.pem
+smtpd_tls_key_file = /etc/letsencrypt/live/download.tbnet.jp/privkey.pem
+smtpd_tls_security_level = may
+smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtpd_tls_loglevel = 1
+
+# メールサイズ制限 (55MB: 添付ファイル50MB + メタデータ)
+message_size_limit = 57671680
+
+# リレー制限 (Exchange OnlineのIPレンジのみ許可)
+smtpd_relay_restrictions =
+    permit_mynetworks
+    check_client_access cidr:/etc/postfix/exchange_ips
+    reject
+
+# Transport設定 (全メールをPythonスクリプトに渡す)
+transport_maps = hash:/etc/postfix/transport
+default_transport = tbn-handler
+
+# キュー設定
+maximal_queue_lifetime = 1d
+bounce_queue_lifetime = 1d
+queue_run_delay = 300s
+
+# ログ
+maillog_file = /var/log/mail.log

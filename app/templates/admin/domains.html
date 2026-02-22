@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}除外ドメイン管理 - TBN Secure Download{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-6">
+            <h1 class="text-lg font-bold text-blue-700">TBN Secure Download</h1>
+            <div class="flex gap-4 text-sm">
+                <a href="/admin/" class="text-gray-600 hover:text-gray-800">ダッシュボード</a>
+                <a href="/admin/transfers" class="text-gray-600 hover:text-gray-800">送信履歴</a>
+                <a href="/admin/settings" class="text-gray-600 hover:text-gray-800">設定</a>
+                <a href="/admin/excluded-domains" class="text-blue-600 hover:text-blue-800 font-medium">除外ドメイン</a>
+                <a href="/admin/audit-logs" class="text-gray-600 hover:text-gray-800">監査ログ</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600">{{ user.get('name', user.get('email', '')) }}</span>
+            <a href="/auth/logout" class="text-sm text-gray-500 hover:text-gray-700">ログアウト</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h2 class="text-xl font-bold text-gray-800">除外ドメイン管理</h2>
+        <p class="text-sm text-gray-500">以下のドメイン宛てメールはセキュアダウンロード変換の対象外になります</p>
+    </div>
+</div>
+
+<!-- 追加フォーム -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h3 class="text-sm font-medium text-gray-700 mb-3">ドメインを追加</h3>
+    <form id="addDomainForm" class="flex gap-3">
+        <input type="text" id="newDomain" placeholder="example.com" required
+               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+        <input type="text" id="newReason" placeholder="理由（任意）"
+               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+        <button type="submit"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+            追加
+        </button>
+    </form>
+</div>
+
+<!-- ドメイン一覧 -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    {% if domains %}
+    <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ドメイン</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">理由</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">登録日</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for d in domains %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ d.domain }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ d.reason or '-' }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ d.created_at.strftime('%Y/%m/%d') }}</td>
+                <td class="px-4 py-3">
+                    <button onclick="deleteDomain('{{ d.id }}', '{{ d.domain }}')"
+                            class="text-red-600 hover:text-red-800 text-sm">削除</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-8">
+        <p class="text-gray-500 text-sm">除外ドメインは登録されていません</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('addDomainForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = document.getElementById('newDomain').value;
+    const reason = document.getElementById('newReason').value;
+    try {
+        const resp = await fetch('/admin/excluded-domains', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({domain, reason: reason || null}),
+        });
+        if (resp.ok) location.reload();
+    } catch(e) {
+        alert('エラーが発生しました');
+    }
+});
+
+async function deleteDomain(id, domain) {
+    if (!confirm(`ドメイン "${domain}" を除外リストから削除しますか？`)) return;
+    try {
+        const resp = await fetch(`/admin/excluded-domains/${id}`, {method: 'DELETE'});
+        if (resp.ok) location.reload();
+    } catch(e) {
+        alert('エラーが発生しました');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}ファイル一覧 - TBN Secure Download{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-blue-700 mb-2">ファイルダウンロード</h1>
+            <p class="text-gray-500 text-sm">認証済み: {{ email }}</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p class="text-sm text-blue-800">
+                送信者: <strong>{{ transfer.sender_email }}</strong>
+            </p>
+            {% if transfer.subject %}
+            <p class="text-sm text-blue-700 mt-1">件名: {{ transfer.subject }}</p>
+            {% endif %}
+            <p class="text-xs text-blue-600 mt-1">
+                有効期限: {{ transfer.expires_at.strftime('%Y年%m月%d日 %H:%M') }}
+            </p>
+        </div>
+
+        <div class="space-y-3">
+            {% for att in attachments %}
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-900 truncate">{{ att.original_filename }}</p>
+                    <p class="text-sm text-gray-500">
+                        {% if att.file_size < 1024 %}
+                            {{ att.file_size }} B
+                        {% elif att.file_size < 1048576 %}
+                            {{ "%.1f"|format(att.file_size / 1024) }} KB
+                        {% else %}
+                            {{ "%.1f"|format(att.file_size / 1048576) }} MB
+                        {% endif %}
+                        &middot;
+                        ダウンロード {{ att.download_count }}/{{ att.max_downloads }}回
+                    </p>
+                </div>
+                <div class="ml-4">
+                    {% if att.download_count < att.max_downloads %}
+                    <a href="/d/{{ download_token }}/download/{{ att.id }}"
+                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                        ダウンロード
+                    </a>
+                    {% else %}
+                    <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 text-sm rounded-lg cursor-not-allowed">
+                        上限到達
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

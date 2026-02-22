@@ -1,0 +1,14 @@
+# TBN Secure Download - Postfix transport map
+# /etc/postfix/transport
+#
+# 全受信メールをPythonハンドラーに渡す
+# postmap /etc/postfix/transport を実行後にPostfixをリロードすること
+
+*   tbn-handler:
+
+# master.cf に以下を追加:
+#
+# tbn-handler unix - n n - 10 pipe
+#   flags=DRXhu user=tbn-app
+#   argv=/opt/tbn-secure-download/venv/bin/python
+#   /opt/tbn-secure-download/mail_handler/postfix_handler.py

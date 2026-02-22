@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}システム設定 - TBN Secure Download{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-6">
+            <h1 class="text-lg font-bold text-blue-700">TBN Secure Download</h1>
+            <div class="flex gap-4 text-sm">
+                <a href="/admin/" class="text-gray-600 hover:text-gray-800">ダッシュボード</a>
+                <a href="/admin/transfers" class="text-gray-600 hover:text-gray-800">送信履歴</a>
+                <a href="/admin/settings" class="text-blue-600 hover:text-blue-800 font-medium">設定</a>
+                <a href="/admin/excluded-domains" class="text-gray-600 hover:text-gray-800">除外ドメイン</a>
+                <a href="/admin/audit-logs" class="text-gray-600 hover:text-gray-800">監査ログ</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600">{{ user.get('name', user.get('email', '')) }}</span>
+            <a href="/auth/logout" class="text-sm text-gray-500 hover:text-gray-700">ログアウト</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<h2 class="text-xl font-bold text-gray-800 mb-6">システム設定</h2>
+
+<form id="settingsForm" class="bg-white rounded-lg shadow-md p-6">
+    <div class="space-y-4">
+        {% for setting in settings %}
+        <div class="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
+            <div class="flex-1">
+                <label for="setting_{{ setting.key }}" class="text-sm font-medium text-gray-700">{{ setting.key }}</label>
+                {% if setting.description %}
+                <p class="text-xs text-gray-500">{{ setting.description }}</p>
+                {% endif %}
+            </div>
+            <input type="text" id="setting_{{ setting.key }}" name="{{ setting.key }}"
+                   value="{{ setting.value }}"
+                   class="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+        </div>
+        {% endfor %}
+    </div>
+    <div class="mt-6 text-right">
+        <button type="submit"
+                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+            設定を保存
+        </button>
+    </div>
+</form>
+
+<div id="successMsg" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm"></div>
+<div id="errorMsg" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const settings = {};
+    const inputs = form.querySelectorAll('input');
+    inputs.forEach(input => {
+        settings[input.name] = input.value;
+    });
+
+    try {
+        const resp = await fetch('/admin/settings', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({settings}),
+        });
+        const data = await resp.json();
+        if (data.success) {
+            document.getElementById('successMsg').textContent = data.message;
+            document.getElementById('successMsg').classList.remove('hidden');
+            document.getElementById('errorMsg').classList.add('hidden');
+        }
+    } catch(e) {
+        document.getElementById('errorMsg').textContent = 'エラーが発生しました';
+        document.getElementById('errorMsg').classList.remove('hidden');
+    }
+});
+</script>
+{% endblock %}

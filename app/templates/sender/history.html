@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}送信履歴 - TBN Secure Download{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-200 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <h1 class="text-lg font-bold text-blue-700">TBN Secure Download</h1>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600">{{ user.get('name', user.get('email', '')) }}</span>
+            <a href="/auth/logout" class="text-sm text-gray-500 hover:text-gray-700">ログアウト</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-xl font-bold text-gray-800">送信履歴</h2>
+    <p class="text-sm text-gray-500">自分が送信したファイルの状況を確認できます</p>
+</div>
+
+{% if transfers %}
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">件名</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">送信日時</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状態</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">受信者</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ファイル数</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for t in transfers %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                    {{ t.subject or '(件名なし)' }}
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-600">
+                    {{ t.sent_at.strftime('%Y/%m/%d %H:%M') }}
+                </td>
+                <td class="px-4 py-3">
+                    {% if t.status == 'active' %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">有効</span>
+                    {% elif t.status == 'revoked' %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">無効化</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ t.recipient_count }}名</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ t.attachment_count }}件</td>
+                <td class="px-4 py-3">
+                    <a href="/sender/transfer/{{ t.id }}" class="text-blue-600 hover:text-blue-800 text-sm">詳細</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-12 bg-white rounded-lg shadow-md">
+    <p class="text-gray-500">送信履歴はありません</p>
+</div>
+{% endif %}
+{% endblock %}
