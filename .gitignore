@@ -40,3 +40,8 @@ Thumbs.db
 
 # Uploaded files (local dev)
 uploaded_files/
+
+# Azure
+local.settings.json
+.python_packages/
+deploy/azure/parameters.json

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "prod"
+    },
+    "namePrefix": {
+      "value": "sd"
+    },
+    "postgresAdminUser": {
+      "value": "pgadmin"
+    },
+    "postgresAdminPassword": {
+      "value": "<PostgreSQL管理者パスワード>"
+    },
+    "appSecretKey": {
+      "value": "<python -c 'import secrets; print(secrets.token_urlsafe(64))'>"
+    },
+    "encryptionKey": {
+      "value": "<python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'>"
+    },
+    "azureTenantId": {
+      "value": "<テナントID>"
+    },
+    "azureClientId": {
+      "value": "<Graph API用クライアントID>"
+    },
+    "azureClientSecret": {
+      "value": "<Graph API用シークレット>"
+    },
+    "entraClientId": {
+      "value": "<Web認証用クライアントID>"
+    },
+    "entraClientSecret": {
+      "value": "<Web認証用シークレット>"
+    },
+    "graphSenderEmail": {
+      "value": "noreply@example.com"
+    },
+    "portalDomain": {
+      "value": "download.example.com"
+    },
+    "adminGroupId": {
+      "value": "<管理者グループのObject ID>"
+    },
+    "processingMailbox": {
+      "value": "process@example.com"
+    }
+  }
+}

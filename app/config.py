@@ -18,8 +18,14 @@ class Settings(BaseSettings):
     database_url_sync: str = "postgresql://app_user:password@localhost:5432/secure_download"
 
     # ファイルストレージ
+    # storage_backend: "local" (ローカルディスク) or "azure_blob" (Azure Blob Storage)
+    storage_backend: str = "azure_blob"
     storage_path: str = "/var/secure-download/files"
     encryption_key: str = ""
+
+    # Azure Blob Storage
+    azure_storage_connection_string: str = ""
+    azure_storage_container_name: str = "secure-downloads"
 
     # Microsoft Graph API
     azure_tenant_id: str = ""
@@ -42,8 +48,16 @@ class Settings(BaseSettings):
     session_expiry_days: int = 14
     rate_limit_per_minute: int = 30
 
+    # メール処理用メールボックス（Azure Functions用）
+    # Exchange Onlineのメールフロールールで添付付きメールを転送する先のメールボックス
+    processing_mailbox: str = ""
+    # ポーリング間隔（秒）
+    mail_polling_interval_seconds: int = 30
+
     # 監視
     teams_webhook_url: str = ""
+    # Azure Application Insights
+    applicationinsights_connection_string: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
