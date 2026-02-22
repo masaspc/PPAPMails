@@ -7,11 +7,11 @@ stdinから生メールデータを読み取り、内部APIにメール処理を
 Postfix設定:
   transport_maps = hash:/etc/postfix/transport
   /etc/postfix/transport:
-    *  tbn-handler:
+    *  sd-handler:
 
   master.cf に以下を追加:
-    tbn-handler unix - n n - 10 pipe
-      flags=DRXhu user=tbn-app argv=/opt/tbn-secure-download/mail_handler/postfix_handler.py
+    sd-handler unix - n n - 10 pipe
+      flags=DRXhu user=app-user argv=/opt/secure-download/mail_handler/postfix_handler.py
 """
 
 import json
@@ -26,11 +26,11 @@ INTERNAL_API_URL = os.environ.get(
     "INTERNAL_API_URL", "http://127.0.0.1:8000/internal/process-email"
 )
 MAIL_SPOOL_DIR = os.environ.get(
-    "MAIL_SPOOL_DIR", "/var/tbn-secure-download/mail_spool"
+    "MAIL_SPOOL_DIR", "/var/secure-download/mail_spool"
 )
 
 logging.basicConfig(
-    filename="/var/log/tbn-secure-download/mail_handler.log",
+    filename="/var/log/secure-download/mail_handler.log",
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )

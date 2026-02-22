@@ -4,7 +4,7 @@
 各VPSが相手のVPSのヘルスチェックを行い、異常検知時にTeams通知する。
 
 crontab設定例:
-  * * * * * /opt/tbn-secure-download/venv/bin/python /opt/tbn-secure-download/scripts/health_check.py
+  * * * * * /opt/secure-download/venv/bin/python /opt/secure-download/scripts/health_check.py
 """
 
 import json
@@ -59,7 +59,7 @@ def send_teams_alert(message: str) -> None:
                 "body": [
                     {
                         "type": "TextBlock",
-                        "text": "TBN Secure Download Alert",
+                        "text": "Secure Download Alert",
                         "weight": "bolder",
                         "size": "medium",
                         "color": "attention",

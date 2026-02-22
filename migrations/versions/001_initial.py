@@ -142,8 +142,8 @@ def upgrade() -> None:
         ('auth_code_max_attempts', '5', '認証コードの最大入力失敗回数'),
         ('session_expiry_days', '14', '認証セッションの保持期間（日）'),
         ('rate_limit_per_minute', '30', 'IPあたりのレート制限（回/分）'),
-        ('notification_email', 'admin@tbnet.jp', 'アラート通知先メール'),
-        ('portal_domain', 'download.tbnet.jp', 'ダウンロードポータルのドメイン')
+        ('notification_email', 'admin@example.com', 'アラート通知先メール'),
+        ('portal_domain', 'download.example.com', 'ダウンロードポータルのドメイン')
     """)
 
     # excluded_domains

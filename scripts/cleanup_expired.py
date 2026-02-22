@@ -2,7 +2,7 @@
 """cron: 期限切れファイル・DB削除スクリプト
 
 crontab設定例:
-  0 3 * * * /opt/tbn-secure-download/venv/bin/python /opt/tbn-secure-download/scripts/cleanup_expired.py
+  0 3 * * * /opt/secure-download/venv/bin/python /opt/secure-download/scripts/cleanup_expired.py
 """
 
 import asyncio

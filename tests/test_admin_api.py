@@ -52,12 +52,12 @@ class TestAdminSchemas:
 
     def test_audit_log_filter_custom(self):
         f = AuditLogFilter(
-            actor_email="admin@tbnet.jp",
+            actor_email="admin@example.com",
             action="revoke_transfer",
             page=2,
             per_page=25,
         )
-        assert f.actor_email == "admin@tbnet.jp"
+        assert f.actor_email == "admin@example.com"
         assert f.page == 2
 
 

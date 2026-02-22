@@ -52,10 +52,10 @@ class TestEmailParsing:
     def test_create_test_email_with_attachment(self):
         """添付ファイル付きメールの構築テスト"""
         msg = email.mime.multipart.MIMEMultipart()
-        msg["From"] = "sender@tbnet.jp"
+        msg["From"] = "sender@example.com"
         msg["To"] = "recipient@example.com"
         msg["Subject"] = "テスト添付ファイル"
-        msg["Message-ID"] = "<test123@tbnet.jp>"
+        msg["Message-ID"] = "<test123@example.com>"
 
         body = email.mime.text.MIMEText("本文テスト", "plain", "utf-8")
         msg.attach(body)
@@ -65,7 +65,7 @@ class TestEmailParsing:
         attachment.add_header("Content-Disposition", "attachment", filename="test.pdf")
         msg.attach(attachment)
 
-        assert msg["From"] == "sender@tbnet.jp"
+        assert msg["From"] == "sender@example.com"
         assert msg["To"] == "recipient@example.com"
         assert msg["Subject"] == "テスト添付ファイル"
 

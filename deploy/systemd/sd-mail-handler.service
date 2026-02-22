@@ -1,6 +1,6 @@
 [Unit]
-Description=TBN Secure Download - Mail Handler (Postfix integration)
-After=network.target postfix.service tbn-secure-download.service
+Description=Secure Download - Mail Handler (Postfix integration)
+After=network.target postfix.service secure-download.service
 Requires=postfix.service
 
 [Service]

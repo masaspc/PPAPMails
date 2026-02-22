@@ -3,13 +3,13 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.backends._legacy:_Backend"
 
 [project]
-name = "tbn-secure-download"
+name = "secure-download"
 version = "1.0.0"
-description = "TBN Secure Download - PPAP対策メール添付ファイルセキュアダウンロードシステム"
+description = "Secure Download - PPAP対策メール添付ファイルセキュアダウンロードシステム"
 requires-python = ">=3.12"
 license = {text = "Proprietary"}
 authors = [
-    {name = "東京ベイネットワーク株式会社 総務部システム課"},
+    {name = "System Admin"},
 ]
 
 dependencies = [

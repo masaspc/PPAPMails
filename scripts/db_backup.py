@@ -2,9 +2,9 @@
 """cron: PostgreSQL バックアップスクリプト
 
 crontab設定例:
-  0 2 * * * /opt/tbn-secure-download/venv/bin/python /opt/tbn-secure-download/scripts/db_backup.py
+  0 2 * * * /opt/secure-download/venv/bin/python /opt/secure-download/scripts/db_backup.py
 
-バックアップ先: /var/tbn-secure-download/backups/
+バックアップ先: /var/secure-download/backups/
 保持期間: 30日
 """
 
@@ -20,9 +20,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BACKUP_DIR = os.environ.get("BACKUP_DIR", "/var/tbn-secure-download/backups")
-DB_NAME = os.environ.get("DB_NAME", "tbn_secure_download")
-DB_USER = os.environ.get("DB_USER", "tbn_app")
+BACKUP_DIR = os.environ.get("BACKUP_DIR", "/var/secure-download/backups")
+DB_NAME = os.environ.get("DB_NAME", "secure_download")
+DB_USER = os.environ.get("DB_USER", "app_user")
 RETENTION_DAYS = int(os.environ.get("RETENTION_DAYS", "30"))
 
 

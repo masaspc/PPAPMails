@@ -7,30 +7,30 @@ class Settings(BaseSettings):
     """環境変数から読み込む設定"""
 
     # アプリケーション
-    app_name: str = "TBN Secure Download"
+    app_name: str = "Secure Download"
     app_env: str = "production"
     app_secret_key: str = "change-me-in-production"
     app_debug: bool = False
-    portal_domain: str = "download.tbnet.jp"
+    portal_domain: str = "download.example.com"
 
     # データベース
-    database_url: str = "postgresql+asyncpg://tbn_app:password@localhost:5432/tbn_secure_download"
-    database_url_sync: str = "postgresql://tbn_app:password@localhost:5432/tbn_secure_download"
+    database_url: str = "postgresql+asyncpg://app_user:password@localhost:5432/secure_download"
+    database_url_sync: str = "postgresql://app_user:password@localhost:5432/secure_download"
 
     # ファイルストレージ
-    storage_path: str = "/var/tbn-secure-download/files"
+    storage_path: str = "/var/secure-download/files"
     encryption_key: str = ""
 
     # Microsoft Graph API
     azure_tenant_id: str = ""
     azure_client_id: str = ""
     azure_client_secret: str = ""
-    graph_sender_email: str = "noreply@tbnet.jp"
+    graph_sender_email: str = "noreply@example.com"
 
     # Entra ID認証
     entra_client_id: str = ""
     entra_client_secret: str = ""
-    entra_redirect_uri: str = "https://download.tbnet.jp/auth/callback"
+    entra_redirect_uri: str = "https://download.example.com/auth/callback"
     admin_group_id: str = ""
 
     # メール処理

@@ -1,8 +1,8 @@
-# TBN Secure Download
+# Secure Download
 
 **PPAP対策 メール添付ファイル セキュアダウンロードシステム**
 
-東京ベイネットワーク株式会社のPPAP（Password付きZIPファイルをメールで送付する運用）対策として、メール添付ファイルを自動的にURLダウンロード方式に変換するシステムです。
+PPAP（Password付きZIPファイルをメールで送付する運用）対策として、メール添付ファイルを自動的にURLダウンロード方式に変換するシステムです。
 
 ## 目次
 
@@ -88,7 +88,7 @@ Exchange Online
 [ConoHa ロードバランサー] ───────────────────┘
     │  ヘルスチェック + 自動切替
     │
-[インターネット] ─── [download.tbnet.jp]
+[インターネット] ─── [download.example.com]
 ```
 
 | コンポーネント | 冗長化方式 |
@@ -162,7 +162,7 @@ Exchange Online
 ## ディレクトリ構成
 
 ```
-/opt/tbn-secure-download/          ← デプロイ先
+/opt/secure-download/          ← デプロイ先
 ├── app/
 │   ├── main.py                    # FastAPIエントリポイント
 │   ├── config.py                  # 環境変数設定管理
@@ -234,7 +234,7 @@ Exchange Online
 - ConoHa VPS 2GBプラン × 2台（Ubuntu 24.04 LTS）
 - ConoHa ロードバランサー × 1
 - ConoHa プライベートネットワーク（無料）
-- 独自ドメイン（例: `download.tbnet.jp`）のDNS設定済み
+- 独自ドメイン（例: `download.example.com`）のDNS設定済み
 
 ### Microsoft 365
 
@@ -271,18 +271,18 @@ sudo apt install -y \
     git curl
 
 # アプリケーション用ユーザー作成
-sudo useradd -r -m -s /bin/bash tbn-app
+sudo useradd -r -m -s /bin/bash app-user
 
 # ディレクトリ作成
-sudo mkdir -p /opt/tbn-secure-download
-sudo mkdir -p /var/tbn-secure-download/{files,mail_spool,backups}
-sudo mkdir -p /var/log/tbn-secure-download
+sudo mkdir -p /opt/secure-download
+sudo mkdir -p /var/secure-download/{files,mail_spool,backups}
+sudo mkdir -p /var/log/secure-download
 sudo mkdir -p /var/lib/postgresql/archive
 
 # 権限設定
-sudo chown -R tbn-app:tbn-app /opt/tbn-secure-download
-sudo chown -R tbn-app:tbn-app /var/tbn-secure-download
-sudo chown -R tbn-app:tbn-app /var/log/tbn-secure-download
+sudo chown -R app-user:app-user /opt/secure-download
+sudo chown -R app-user:app-user /var/secure-download
+sudo chown -R app-user:app-user /var/log/secure-download
 
 # ファイアウォール設定
 sudo ufw default deny incoming
@@ -308,22 +308,22 @@ sudo dpkg-reconfigure -plow unattended-upgrades
 ```bash
 # PostgreSQLユーザー・DB作成
 sudo -u postgres psql <<SQL
-CREATE USER tbn_app WITH PASSWORD 'YOUR_SECURE_PASSWORD';
-CREATE DATABASE tbn_secure_download OWNER tbn_app;
-GRANT ALL PRIVILEGES ON DATABASE tbn_secure_download TO tbn_app;
+CREATE USER app_user WITH PASSWORD 'YOUR_SECURE_PASSWORD';
+CREATE DATABASE secure_download OWNER app_user;
+GRANT ALL PRIVILEGES ON DATABASE secure_download TO app_user;
 
 -- レプリケーション用ユーザー
 CREATE USER replicator WITH REPLICATION PASSWORD 'REPLICATOR_PASSWORD';
 SQL
 
 # PostgreSQL設定をコピー
-sudo cp deploy/postgresql/primary.conf /etc/postgresql/16/main/conf.d/tbn-replication.conf
+sudo cp deploy/postgresql/primary.conf /etc/postgresql/16/main/conf.d/sd-replication.conf
 # ${PRIVATE_IP} を VPS1 のプライベートIPに書き換え
-sudo sed -i "s/\${PRIVATE_IP}/10.0.0.1/" /etc/postgresql/16/main/conf.d/tbn-replication.conf
+sudo sed -i "s/\${PRIVATE_IP}/10.0.0.1/" /etc/postgresql/16/main/conf.d/sd-replication.conf
 
 # pg_hba.conf にレプリケーション許可を追加
 echo "host  replication  replicator  <VPS2_PRIVATE_IP>/32  md5" | sudo tee -a /etc/postgresql/16/main/pg_hba.conf
-echo "host  tbn_secure_download  tbn_app  127.0.0.1/32  md5" | sudo tee -a /etc/postgresql/16/main/pg_hba.conf
+echo "host  secure_download  app_user  127.0.0.1/32  md5" | sudo tee -a /etc/postgresql/16/main/pg_hba.conf
 
 # アーカイブディレクトリ
 sudo mkdir -p /var/lib/postgresql/archive
@@ -350,7 +350,7 @@ sudo -u postgres pg_basebackup \
     -P -R
 
 # Standby設定をコピー
-sudo cp deploy/postgresql/standby.conf /etc/postgresql/16/main/conf.d/tbn-replication.conf
+sudo cp deploy/postgresql/standby.conf /etc/postgresql/16/main/conf.d/sd-replication.conf
 
 # standby.signal の存在を確認
 ls -la /var/lib/postgresql/16/main/standby.signal
@@ -373,22 +373,22 @@ FROM pg_stat_replication;
 
 ```bash
 # リポジトリをクローン
-cd /opt/tbn-secure-download
-sudo -u tbn-app git clone https://github.com/masaspc/PPAPMails.git .
+cd /opt/secure-download
+sudo -u app-user git clone https://github.com/masaspc/PPAPMails.git .
 
 # Python仮想環境の作成と依存パッケージインストール
-sudo -u tbn-app python3.12 -m venv venv
-sudo -u tbn-app ./venv/bin/pip install -r requirements.txt
+sudo -u app-user python3.12 -m venv venv
+sudo -u app-user ./venv/bin/pip install -r requirements.txt
 
 # 環境変数ファイルの作成
-sudo -u tbn-app cp .env.example .env
-sudo -u tbn-app chmod 600 .env
+sudo -u app-user cp .env.example .env
+sudo -u app-user chmod 600 .env
 ```
 
 #### .env ファイルの編集
 
 ```bash
-sudo -u tbn-app nano .env
+sudo -u app-user nano .env
 ```
 
 以下の値を実際の値に設定します:
@@ -396,11 +396,11 @@ sudo -u tbn-app nano .env
 ```env
 # アプリケーション
 APP_SECRET_KEY=<生成: python3 -c "import secrets; print(secrets.token_urlsafe(64))">
-PORTAL_DOMAIN=download.tbnet.jp
+PORTAL_DOMAIN=download.example.com
 
 # データベース
-DATABASE_URL=postgresql+asyncpg://tbn_app:YOUR_SECURE_PASSWORD@localhost:5432/tbn_secure_download
-DATABASE_URL_SYNC=postgresql://tbn_app:YOUR_SECURE_PASSWORD@localhost:5432/tbn_secure_download
+DATABASE_URL=postgresql+asyncpg://app_user:YOUR_SECURE_PASSWORD@localhost:5432/secure_download
+DATABASE_URL_SYNC=postgresql://app_user:YOUR_SECURE_PASSWORD@localhost:5432/secure_download
 
 # ファイル暗号化キー
 ENCRYPTION_KEY=<生成: python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())">
@@ -409,12 +409,12 @@ ENCRYPTION_KEY=<生成: python3 -c "from cryptography.fernet import Fernet; prin
 AZURE_TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 AZURE_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 AZURE_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-GRAPH_SENDER_EMAIL=noreply@tbnet.jp
+GRAPH_SENDER_EMAIL=noreply@example.com
 
 # Entra ID認証（Step 8で取得した値）
 ENTRA_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ENTRA_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-ENTRA_REDIRECT_URI=https://download.tbnet.jp/auth/callback
+ENTRA_REDIRECT_URI=https://download.example.com/auth/callback
 ADMIN_GROUP_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
@@ -423,21 +423,21 @@ ADMIN_GROUP_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 #### データベースマイグレーション（VPS1のみ）
 
 ```bash
-cd /opt/tbn-secure-download
-sudo -u tbn-app ./venv/bin/alembic -c migrations/alembic.ini upgrade head
+cd /opt/secure-download
+sudo -u app-user ./venv/bin/alembic -c migrations/alembic.ini upgrade head
 ```
 
 #### systemdサービス登録
 
 ```bash
 # FastAPIアプリケーション
-sudo cp deploy/systemd/tbn-secure-download.service /etc/systemd/system/
+sudo cp deploy/systemd/secure-download.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable tbn-secure-download
-sudo systemctl start tbn-secure-download
+sudo systemctl enable secure-download
+sudo systemctl start secure-download
 
 # 起動確認
-sudo systemctl status tbn-secure-download
+sudo systemctl status secure-download
 curl http://127.0.0.1:8000/internal/health
 # → {"status":"ok","database":"ok","storage":"ok","version":"1.0.0"}
 ```
@@ -448,11 +448,11 @@ curl http://127.0.0.1:8000/internal/health
 
 ```bash
 # SSL証明書の取得（初回のみ）
-sudo certbot certonly --standalone -d download.tbnet.jp
+sudo certbot certonly --standalone -d download.example.com
 
 # Nginx設定をコピー
-sudo cp deploy/nginx/tbn-secure-download.conf /etc/nginx/sites-available/
-sudo ln -s /etc/nginx/sites-available/tbn-secure-download.conf /etc/nginx/sites-enabled/
+sudo cp deploy/nginx/secure-download.conf /etc/nginx/sites-available/
+sudo ln -s /etc/nginx/sites-available/secure-download.conf /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
 # 設定テスト
@@ -463,8 +463,8 @@ sudo systemctl enable nginx
 sudo systemctl restart nginx
 
 # SSL自動更新フック
-sudo cp deploy/certbot/renewal-hook.sh /etc/letsencrypt/renewal-hooks/deploy/tbn-reload.sh
-sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/tbn-reload.sh
+sudo cp deploy/certbot/renewal-hook.sh /etc/letsencrypt/renewal-hooks/deploy/sd-reload.sh
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/sd-reload.sh
 
 # certbot自動更新テスト
 sudo certbot renew --dry-run
@@ -479,7 +479,7 @@ ConoHaコントロールパネルで以下を設定:
 3. バランシング方式: リーストコネクション
 4. ヘルスモニタ: HTTP, パス `/internal/health`, 間隔 30秒
 5. メンバー: VPS1, VPS2 のグローバルIP
-6. ドメイン `download.tbnet.jp` のAレコードをLBのIPに設定
+6. ドメイン `download.example.com` のAレコードをLBのIPに設定
 
 ### Step 5: Postfix設定
 
@@ -505,14 +505,14 @@ sudo cat > /etc/postfix/exchange_ips <<'EOF'
 104.47.0.0/17   OK
 EOF
 
-# master.cfにtbn-handlerを追加
+# master.cfにsd-handlerを追加
 sudo cat >> /etc/postfix/master.cf <<'EOF'
 
-# TBN Secure Download - Mail handler
-tbn-handler unix - n n - 10 pipe
-  flags=DRXhu user=tbn-app
-  argv=/opt/tbn-secure-download/venv/bin/python
-  /opt/tbn-secure-download/mail_handler/postfix_handler.py
+# Secure Download - Mail handler
+sd-handler unix - n n - 10 pipe
+  flags=DRXhu user=app-user
+  argv=/opt/secure-download/venv/bin/python
+  /opt/secure-download/mail_handler/postfix_handler.py
 EOF
 
 # Postfix再起動
@@ -527,12 +527,12 @@ sudo systemctl restart postfix
 **両VPSで実施:**
 
 ```bash
-# SSH鍵生成（tbn-appユーザーで）
-sudo -u tbn-app ssh-keygen -t ed25519 -f /home/tbn-app/.ssh/id_ed25519 -N ""
+# SSH鍵生成（app-userユーザーで）
+sudo -u app-user ssh-keygen -t ed25519 -f /home/app-user/.ssh/id_ed25519 -N ""
 
 # 相手VPSにSSH公開鍵を登録
 # VPS1の公開鍵をVPS2に、VPS2の公開鍵をVPS1に登録
-sudo -u tbn-app ssh-copy-id -i /home/tbn-app/.ssh/id_ed25519.pub tbn-app@<PEER_PRIVATE_IP>
+sudo -u app-user ssh-copy-id -i /home/app-user/.ssh/id_ed25519.pub app-user@<PEER_PRIVATE_IP>
 
 # lsyncd設定
 sudo cp deploy/lsyncd/lsyncd.conf.lua /etc/lsyncd/lsyncd.conf.lua
@@ -551,13 +551,13 @@ sudo systemctl start lsyncd
 
 ```bash
 # VPS1でテストファイルを作成
-sudo -u tbn-app touch /var/tbn-secure-download/files/sync_test
+sudo -u app-user touch /var/secure-download/files/sync_test
 
 # VPS2で確認（数秒以内に反映される）
-ls -la /var/tbn-secure-download/files/sync_test
+ls -la /var/secure-download/files/sync_test
 
 # テストファイル削除
-sudo -u tbn-app rm /var/tbn-secure-download/files/sync_test
+sudo -u app-user rm /var/secure-download/files/sync_test
 ```
 
 ### Step 7: Exchange Online設定
@@ -568,7 +568,7 @@ sudo -u tbn-app rm /var/tbn-secure-download/files/sync_test
 2. **メールフロー** > **コネクタ** > **コネクタの追加**
 3. 接続元: **Office 365**
 4. 接続先: **パートナー組織**
-5. 名前: `TBN Secure Download`
+5. 名前: `Secure Download`
 6. メールのルーティング:
    - **スマートホスト経由** を選択
    - VPS1のグローバルIP と VPS2のグローバルIP を両方追加
@@ -586,7 +586,7 @@ sudo -u tbn-app rm /var/tbn-secure-download/files/sync_test
 4. 例外（任意）:
    - 受信者のドメインが `除外ドメインリスト` に含まれる場合は除外
 5. アクション:
-   - **メッセージを次のコネクタにリダイレクト** → `TBN Secure Download`
+   - **メッセージを次のコネクタにリダイレクト** → `Secure Download`
 6. 優先度: 適切に設定
 
 ### Step 8: Microsoft Entra ID設定
@@ -594,7 +594,7 @@ sudo -u tbn-app rm /var/tbn-secure-download/files/sync_test
 #### アプリ登録 1: Graph API用（メール送信）
 
 1. [Azure Portal](https://portal.azure.com/) > **Microsoft Entra ID** > **アプリの登録** > **新規登録**
-2. 名前: `TBN Secure Download - Graph API`
+2. 名前: `Secure Download - Graph API`
 3. サポートされているアカウントの種類: **この組織のアカウントのみ**
 4. **APIのアクセス許可**:
    - `Mail.Send` (アプリケーション)
@@ -605,8 +605,8 @@ sudo -u tbn-app rm /var/tbn-secure-download/files/sync_test
 #### アプリ登録 2: Web認証用（送信者・管理者画面）
 
 1. **アプリの登録** > **新規登録**
-2. 名前: `TBN Secure Download - Web`
-3. リダイレクトURI: `https://download.tbnet.jp/auth/callback` (Web)
+2. 名前: `Secure Download - Web`
+3. リダイレクトURI: `https://download.example.com/auth/callback` (Web)
 4. **APIのアクセス許可**:
    - `User.Read` (委任)
    - `GroupMember.Read.All` (委任) ← 管理者グループ判定用
@@ -616,7 +616,7 @@ sudo -u tbn-app rm /var/tbn-secure-download/files/sync_test
 #### 管理者グループの設定
 
 1. **Entra ID** > **グループ** > **新しいグループ**
-2. グループ名: `TBN Secure Download Admins`
+2. グループ名: `Secure Download Admins`
 3. メンバー: システム管理者を追加
 4. グループのオブジェクトIDを `.env` の `ADMIN_GROUP_ID` に設定
 
@@ -626,7 +626,7 @@ sudo -u tbn-app rm /var/tbn-secure-download/files/sync_test
 
 ```bash
 # フィルター定義
-sudo cat > /etc/fail2ban/filter.d/tbn-auth.conf <<'EOF'
+sudo cat > /etc/fail2ban/filter.d/sd-auth.conf <<'EOF'
 [Definition]
 failregex = ^.*"POST /d/.*/verify HTTP/.*" (401|403) .* <HOST>
             ^.*"POST /d/.*/request-code HTTP/.*" (403|429) .* <HOST>
@@ -634,7 +634,7 @@ ignoreregex =
 EOF
 
 # jail設定
-sudo cp deploy/fail2ban/tbn-auth.conf /etc/fail2ban/jail.d/
+sudo cp deploy/fail2ban/sd-auth.conf /etc/fail2ban/jail.d/
 
 # fail2ban再起動
 sudo systemctl enable fail2ban
@@ -644,20 +644,20 @@ sudo systemctl restart fail2ban
 #### cronジョブ設定
 
 ```bash
-sudo -u tbn-app crontab -e
+sudo -u app-user crontab -e
 ```
 
 以下を追加:
 
 ```cron
 # 期限切れファイル・DB削除（毎日3:00）
-0 3 * * * /opt/tbn-secure-download/venv/bin/python /opt/tbn-secure-download/scripts/cleanup_expired.py >> /var/log/tbn-secure-download/cleanup.log 2>&1
+0 3 * * * /opt/secure-download/venv/bin/python /opt/secure-download/scripts/cleanup_expired.py >> /var/log/secure-download/cleanup.log 2>&1
 
 # DBバックアップ（毎日2:00）
-0 2 * * * /opt/tbn-secure-download/venv/bin/python /opt/tbn-secure-download/scripts/db_backup.py >> /var/log/tbn-secure-download/backup.log 2>&1
+0 2 * * * /opt/secure-download/venv/bin/python /opt/secure-download/scripts/db_backup.py >> /var/log/secure-download/backup.log 2>&1
 
 # 相互ヘルスチェック（毎分）
-* * * * * PEER_HEALTH_URL=http://<PEER_PRIVATE_IP>:8000/internal/health HOSTNAME=$(hostname) /opt/tbn-secure-download/venv/bin/python /opt/tbn-secure-download/scripts/health_check.py >> /var/log/tbn-secure-download/health.log 2>&1
+* * * * * PEER_HEALTH_URL=http://<PEER_PRIVATE_IP>:8000/internal/health HOSTNAME=$(hostname) /opt/secure-download/venv/bin/python /opt/secure-download/scripts/health_check.py >> /var/log/secure-download/health.log 2>&1
 ```
 
 #### Teams通知（任意）
@@ -685,7 +685,7 @@ cp .env.example .env
 # .env を編集:
 #   APP_ENV=development
 #   APP_DEBUG=true
-#   DATABASE_URL=postgresql+asyncpg://tbn_app:password@localhost:5432/tbn_secure_download
+#   DATABASE_URL=postgresql+asyncpg://app_user:password@localhost:5432/secure_download
 #   ENCRYPTION_KEY=<Fernet鍵を生成>
 #   STORAGE_PATH=./uploaded_files
 ```
@@ -694,8 +694,8 @@ cp .env.example .env
 
 ```bash
 # PostgreSQLにDBとユーザーを作成
-sudo -u postgres createuser tbn_app
-sudo -u postgres createdb -O tbn_app tbn_secure_download
+sudo -u postgres createuser app_user
+sudo -u postgres createdb -O app_user secure_download
 
 # マイグレーション実行
 alembic -c migrations/alembic.ini upgrade head
@@ -822,10 +822,10 @@ Content-Type: application/json
 # 1. VPS2をLBから切り離し（ConoHaパネルまたはヘルスチェック失敗で自動）
 
 # 2. VPS2でアップデート実施
-cd /opt/tbn-secure-download
-sudo -u tbn-app git pull origin main
-sudo -u tbn-app ./venv/bin/pip install -r requirements.txt
-sudo systemctl restart tbn-secure-download
+cd /opt/secure-download
+sudo -u app-user git pull origin main
+sudo -u app-user ./venv/bin/pip install -r requirements.txt
+sudo systemctl restart secure-download
 
 # 3. VPS2の動作確認
 curl http://127.0.0.1:8000/internal/health
@@ -837,14 +837,14 @@ curl http://127.0.0.1:8000/internal/health
 # 5. VPS1をLBから切り離し
 
 # 6. VPS1でアップデート実施（同じ手順）
-cd /opt/tbn-secure-download
-sudo -u tbn-app git pull origin main
-sudo -u tbn-app ./venv/bin/pip install -r requirements.txt
+cd /opt/secure-download
+sudo -u app-user git pull origin main
+sudo -u app-user ./venv/bin/pip install -r requirements.txt
 
 # 7. DBマイグレーション（必要な場合、VPS1でのみ実行）
-sudo -u tbn-app ./venv/bin/alembic -c migrations/alembic.ini upgrade head
+sudo -u app-user ./venv/bin/alembic -c migrations/alembic.ini upgrade head
 
-sudo systemctl restart tbn-secure-download
+sudo systemctl restart secure-download
 
 # 8. VPS1の動作確認
 curl http://127.0.0.1:8000/internal/health
@@ -863,7 +863,7 @@ VPS1（Primary）が障害でダウンした場合:
 sudo -u postgres pg_ctl promote -D /var/lib/postgresql/16/main
 
 # 2. アプリケーション再起動（localhostのDBに接続するため変更不要）
-sudo systemctl restart tbn-secure-download
+sudo systemctl restart secure-download
 
 # 3. 動作確認
 curl http://127.0.0.1:8000/internal/health
@@ -888,7 +888,7 @@ sudo -u postgres pg_basebackup \
     -P -R
 
 # 4. Standby設定を適用
-sudo cp deploy/postgresql/standby.conf /etc/postgresql/16/main/conf.d/tbn-replication.conf
+sudo cp deploy/postgresql/standby.conf /etc/postgresql/16/main/conf.d/sd-replication.conf
 
 # 5. PostgreSQL起動
 sudo systemctl start postgresql
@@ -899,23 +899,23 @@ sudo systemctl start postgresql
 #### 自動バックアップ
 
 - cronで毎日2:00に `scripts/db_backup.py` が実行
-- バックアップ先: `/var/tbn-secure-download/backups/`
+- バックアップ先: `/var/secure-download/backups/`
 - 保持期間: 30日（古いバックアップは自動削除）
 - ConoHa自動バックアップも併用
 
 #### 手動バックアップ
 
 ```bash
-sudo -u tbn-app /opt/tbn-secure-download/venv/bin/python \
-    /opt/tbn-secure-download/scripts/db_backup.py
+sudo -u app-user /opt/secure-download/venv/bin/python \
+    /opt/secure-download/scripts/db_backup.py
 ```
 
 #### リストア
 
 ```bash
 # バックアップファイルからリストア
-gunzip -c /var/tbn-secure-download/backups/tbn_secure_download_YYYYMMDD_HHMMSS.sql.gz \
-    | sudo -u postgres psql tbn_secure_download
+gunzip -c /var/secure-download/backups/secure_download_YYYYMMDD_HHMMSS.sql.gz \
+    | sudo -u postgres psql secure_download
 ```
 
 ### 定期メンテナンス
@@ -943,23 +943,23 @@ sudo postqueue -p
 sudo tail -f /var/log/mail.log
 
 # メールハンドラーログ確認
-sudo tail -f /var/log/tbn-secure-download/mail_handler.log
+sudo tail -f /var/log/secure-download/mail_handler.log
 
 # FastAPIログ確認
-sudo journalctl -u tbn-secure-download -f
+sudo journalctl -u secure-download -f
 ```
 
 ### ダウンロードできない
 
 ```bash
 # ファイルの存在確認
-ls -la /var/tbn-secure-download/files/
+ls -la /var/secure-download/files/
 
 # lsyncd同期状態確認
 sudo cat /var/log/lsyncd/lsyncd.status
 
 # アプリケーションログ
-sudo tail -f /var/log/tbn-secure-download/error.log
+sudo tail -f /var/log/secure-download/error.log
 ```
 
 ### DB接続エラー
@@ -972,24 +972,24 @@ sudo systemctl status postgresql
 sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
 
 # DB接続テスト
-sudo -u tbn-app psql -h 127.0.0.1 -U tbn_app -d tbn_secure_download -c "SELECT 1;"
+sudo -u app-user psql -h 127.0.0.1 -U app_user -d secure_download -c "SELECT 1;"
 ```
 
 ### fail2banでIPがブロックされた
 
 ```bash
 # ブロック状態確認
-sudo fail2ban-client status tbn-auth
+sudo fail2ban-client status sd-auth
 
 # 特定IPのブロック解除
-sudo fail2ban-client set tbn-auth unbanip <IP_ADDRESS>
+sudo fail2ban-client set sd-auth unbanip <IP_ADDRESS>
 ```
 
 ### Graph API メール送信エラー
 
 ```bash
 # トークン取得テスト
-sudo -u tbn-app /opt/tbn-secure-download/venv/bin/python -c "
+sudo -u app-user /opt/secure-download/venv/bin/python -c "
 from app.services.graph_api import GraphAPIClient
 import asyncio
 client = GraphAPIClient()
@@ -1075,4 +1075,4 @@ audit_logs (独立)
 
 ## ライセンス
 
-Proprietary - 東京ベイネットワーク株式会社
+Proprietary

@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("APP_SECRET_KEY", "test-secret-key")
 os.environ.setdefault("ENCRYPTION_KEY", "dGVzdC1lbmNyeXB0aW9uLWtleS1mb3ItdGVzdGluZw==")
-os.environ.setdefault("STORAGE_PATH", "/tmp/tbn-test-files")
+os.environ.setdefault("STORAGE_PATH", "/tmp/sd-test-files")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///")
 os.environ.setdefault("DATABASE_URL_SYNC", "sqlite:///")
 
@@ -24,7 +24,7 @@ def sample_transfer_data():
     """テスト用Transfer データ"""
     return {
         "original_message_id": "<test@example.com>",
-        "sender_email": "sender@tbnet.jp",
+        "sender_email": "sender@example.com",
         "subject": "テストメール",
         "expires_at": datetime.now(timezone.utc) + timedelta(days=30),
     }

@@ -19,7 +19,7 @@ from app.services.notification import NotificationService
 
 router = APIRouter(prefix="/d", tags=["download"])
 
-SESSION_COOKIE_NAME = "tbn_session"
+SESSION_COOKIE_NAME = "sd_session"
 
 
 async def _get_transfer_by_token(

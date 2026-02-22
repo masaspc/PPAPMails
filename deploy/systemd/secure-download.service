@@ -1,0 +1,34 @@
+[Unit]
+Description=Secure Download - FastAPI Application
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=exec
+User=app-user
+Group=app-user
+WorkingDirectory=/opt/secure-download
+Environment="PATH=/opt/secure-download/venv/bin"
+EnvironmentFile=/opt/secure-download/.env
+ExecStart=/opt/secure-download/venv/bin/gunicorn app.main:app \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --workers 2 \
+    --bind 127.0.0.1:8000 \
+    --timeout 300 \
+    --access-logfile /var/log/secure-download/access.log \
+    --error-logfile /var/log/secure-download/error.log
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# セキュリティ強化
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/secure-download
+ReadOnlyPaths=/opt/secure-download
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

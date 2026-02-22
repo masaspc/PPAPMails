@@ -17,12 +17,12 @@ class NotificationService:
 
     async def send_auth_code_email(self, to_email: str, code: str) -> bool:
         """認証コードメールを送信"""
-        subject = f"【TBN Secure Download】認証コード: {code}"
+        subject = f"【Secure Download】認証コード: {code}"
         body_html = f"""
         <html>
         <body style="font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
             <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 32px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <h2 style="color: #1a56db; margin-top: 0;">TBN Secure Download</h2>
+                <h2 style="color: #1a56db; margin-top: 0;">Secure Download</h2>
                 <p>ファイルダウンロードの認証コードをお知らせします。</p>
                 <div style="background-color: #f0f4ff; border: 2px solid #1a56db; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
                     <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1a56db;">{code}</span>
@@ -33,7 +33,7 @@ class NotificationService:
                 </p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
                 <p style="color: #999; font-size: 12px;">
-                    東京ベイネットワーク株式会社<br>
+                    Secure Download System<br>
                     このメールは自動送信です。返信はできません。
                 </p>
             </div>
@@ -108,7 +108,7 @@ class NotificationService:
             {attachment_section}
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
             <p style="color: #999; font-size: 11px;">
-                このメールは TBN Secure Download により添付ファイルがセキュアダウンロードリンクに変換されています。<br>
+                このメールは Secure Download により添付ファイルがセキュアダウンロードリンクに変換されています。<br>
                 送信元: {sender_email}
             </p>
         </body>
