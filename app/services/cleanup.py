@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.attachment import Attachment
 from app.models.transfer import Transfer
 from app.services.file_manager import FileManager
@@ -64,15 +65,33 @@ class CleanupService:
         Returns:
             削除したファイル数
         """
-        from pathlib import Path
-
-        storage_path = Path(self.file_manager.storage_path)
-        if not storage_path.exists():
-            return 0
-
         # DBに登録されたファイル名一覧を取得
         result = await self.db.execute(select(Attachment.stored_filename))
         db_filenames = {row[0] for row in result.all()}
+
+        if settings.storage_backend == "azure_blob":
+            return await self._cleanup_orphaned_blobs(db_filenames)
+        else:
+            return await self._cleanup_orphaned_local(db_filenames)
+
+    async def _cleanup_orphaned_blobs(self, db_filenames: set[str]) -> int:
+        """Azure Blob Storage の孤立ファイルを削除"""
+        blob_names = await self.file_manager.list_blobs()
+        deleted_count = 0
+        for blob_name in blob_names:
+            if blob_name not in db_filenames:
+                await self.file_manager.delete_file(blob_name)
+                deleted_count += 1
+                logger.info("Deleted orphaned blob: %s", blob_name)
+        return deleted_count
+
+    async def _cleanup_orphaned_local(self, db_filenames: set[str]) -> int:
+        """ローカルディスクの孤立ファイルを削除"""
+        from pathlib import Path
+
+        storage_path = Path(settings.storage_path)
+        if not storage_path.exists():
+            return 0
 
         deleted_count = 0
         for file_path in storage_path.iterdir():
